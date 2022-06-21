@@ -16,6 +16,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/social-ne
     useUnifiedTopology: true
 })
 
+// logs mongo queries that are being executed
 mongoose.set('debug', true);
 
 app.listen(PORT, () => console.log(`You did it! Connected on localhost:${PORT}`));
