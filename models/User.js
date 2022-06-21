@@ -10,9 +10,15 @@ const UserSchema = new Schema(
         },
         email: {
             type: String,
-            required: true,
+            required: [true, "Email required"],
             unique: true,
-            // add validation for email
+            validate: {
+                validator: function(v) {
+                    //check if correct
+                    return '/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/'.test(v);
+                },
+                message: "Please enter a valid email"
+            }
         },
         thoughts: [
             {
