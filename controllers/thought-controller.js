@@ -1,14 +1,47 @@
 const { User, Thought } = require("../models");
 
 const thoughtController = {
+    // get all thoguhts
+    getAllThoughts(req, res) {
+        Thought.find({})
+        .populate({
+            path: 'reactions',
+            select: '-__v'
+        })
+        .populate({
+            path: 'thought',
+            select: '-__v'
+        })
+        .select('-__v')
+        .then(dbThoughtData => res.json(dbThoughtData))
+        .catch(err => {
+            console.log(err);
+            res.status(400).json(err);
+        })
+    },
+
+    getThoughtById({ params }, res) {
+        Thought.findOne({ _id: params.id })
+        .then((dbThoguhtData) => {
+            if(!dbThoughtData) {
+                res.status(404).json({ message: 'No thought found with this id'});
+                return;
+            }
+            res.json(dbThoughtData);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(400).json(err);
+        })
+    },
+
     //add thought to user
-    addThought({ params, body }, res) {
-        console.log(body);
+    addThought({ body }, res) {
         Thought.create(body)
-        .then(({ _id }) => {
+        .then((thoughtData) => {
             return User.findOneAndUpdate(
-                { _id: params.userId },
-                { $push: { thoughts: _id } },
+                { _id: body.userId },
+                { $push: { thoughts: thoughtData._id } },
                 { new: true }
             );
         })
@@ -22,12 +55,24 @@ const thoughtController = {
         .catch((err) => res.json(err));
     },
 
+    updateThought({ params, body }, res) {
+        Thought.findOneAndUpdate({ _id: params.id }, body, { new: true })
+        .then((dbThoughtData) => {
+            if(!dbThoughtData) {
+                res.status(404).json({ message: 'No thought with this id' });
+                return;
+            }
+            res.json(dbThoughtData);
+        })
+        .catch((err) => res.status(400).json(err));
+    },
+
     // add reply to thought otherwise known as reaction
     addReaction({ params, body }, res) {
         Thought.findOneAndUpdate(
             { _id: params.thoguhtId },
             { $push: { reactions: body } },
-            { new: true, runValiddators: true }
+            { new: true, runValidators: true }
         )
         .then((dbUserData) => {
             if(!dbUserData) {
@@ -43,10 +88,10 @@ const thoughtController = {
     removeReaction({ params }, res) {
         Thought.findOneAndUpdate(
             { _id: params.thoughtId },
-            { $pull: { reaction: { reactionId: params.reactionId } } },
+            { $pull: { reactions: { reactionId: params.reactionId } } },
             { new: true }
         )
-        .then(dbUserData => res.json(dbUserData))
+        .then(dbThoughtData => res.json(dbThoughtData))
         .catch(err => res.json(err));
     },
     
